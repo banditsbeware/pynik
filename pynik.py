@@ -1,6 +1,9 @@
 import requests
 
-WORDNIK_KEY = 'wdm3ufsvtmthan3w5xrrvr1nmpzkhh5n7wz4kher6uzfiuwtk'
+import os
+from dotenv import load_dotenv
+load_dotenv()
+WORDNIK_KEY = os.getenv('WORDNIK_KEY')
 
 class Words:
     
