@@ -1,4 +1,5 @@
 import requests
+import re
 
 import os
 from dotenv import load_dotenv
@@ -18,7 +19,12 @@ class Words:
         for arg in args:
             url += arg + '&'
         url += f'api_key={self.key}'
-        return requests.get(url)
+        res = requests.get(url)
+        status = res.status_code
+        if status == 200: return res
+        if status == 429: raise RuntimeError('429: too many requests.')
+        url = url[:-len(self.key)] + '...'
+        raise RuntimeError(f'wordnik returned status code {status} for the following URL:\n\t{url}')
 
         # a list of n random words
     def random(self, n=0):
@@ -29,13 +35,28 @@ class Words:
         else:
             return self.get('words.json/randomWord').json()['word']
 
-    def define(self, word):
-        json = self.get(f'word.json/{word}/definitions').json()
-        return json[0]['text']
+    def define(self, word, n):
+        try:
+            json = self.get(f'word.json/{word}/definitions').json()
+            defs = []
+            i = 0
+            while len(defs) < n and i < len(json):
+                if json[i].__contains__('text'): 
+                    txt = json[i]['text']
+                    txt = re.sub('<.*?>', '', txt)
+                    defs.append(txt)
+                i += 1
+            return defs
+        except RuntimeError:
+            return None
 
 if __name__ == '__main__':
     words = Words(WORDNIK_KEY)
-    print(words.random(10))
+    # print(words.random(10))
     w = words.random()
-    print(f'{w}: {words.define(w)}')
-
+    print(f'{w}:')
+    defs = words.define(w, 5)
+    if defs:
+        for d in defs:
+            print(f'  - {d}')
+        
