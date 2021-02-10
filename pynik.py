@@ -14,25 +14,28 @@ class Words:
 
     # basic url builder for the words.json endpoint
     def get(self, command, args=[]):
-        url = f'{self.base}/words.json/{command}?'
+        url = f'{self.base}/{command}?'
         for arg in args:
             url += arg + '&'
         url += f'api_key={self.key}'
         return requests.get(url)
 
-    # one random word
-    def random(self):
-        json = self.get('randomWord').json()
-        return json['word']
+        # a list of n random words
+    def random(self, n=0):
+        if n < 0: raise ValueError('Words.random(n): n must be zero or a positive integer')
+        if n:
+            json = self.get('words.json/randomWords', [f'limit={n}']).json()
+            return [json[i]['word'] for i in range(n)]
+        else:
+            return self.get('words.json/randomWord').json()['word']
 
-    # a list of n random words
-    def randomWords(self, n):
-        json = self.get('randomWords', [f'limit={n}']).json()
-        return [json[i]['word'] for i in range(n)]
-
+    def define(self, word):
+        json = self.get(f'word.json/{word}/definitions').json()
+        return json[0]['text']
 
 if __name__ == '__main__':
     words = Words(WORDNIK_KEY)
-    # print(words.random())
-    print(words.randomWords(10))
+    print(words.random(10))
+    w = words.random()
+    print(f'{w}: {words.define(w)}')
 
